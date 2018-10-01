@@ -86,6 +86,7 @@ func (c *CLI) parseFlags(args []string) *options {
 		header     = "default headers which set to each requests (example: foo=bar)"
 		web        = "use gRPC Web protocol"
 		reflection = "use gRPC reflection"
+		secure     = "use TLS connection"
 
 		version = "display version and exit"
 		help    = "display this help and exit"
@@ -112,6 +113,7 @@ func (c *CLI) parseFlags(args []string) *options {
 			header,
 			web,
 			reflection,
+			secure,
 			help,
 			version,
 		)
@@ -136,6 +138,7 @@ func (c *CLI) parseFlags(args []string) *options {
 	f.Var(&opts.path, "path", path)
 	f.Var(&opts.header, "header", header)
 	f.BoolVar(&opts.web, "web", false, web)
+	f.BoolVar(&opts.secure, "secure", false, secure)
 	f.BoolVar(&opts.reflection, "reflection", false, reflection)
 	f.BoolVar(&opts.reflection, "r", false, reflection)
 	f.BoolVar(&opts.version, "version", false, version)
@@ -167,6 +170,7 @@ type options struct {
 	header     optStrSlice
 	web        bool
 	reflection bool
+	secure     bool
 
 	// meta options
 	version bool
@@ -560,6 +564,9 @@ func mergeConfig(cfg *config.Config, opt *options, proto []string) (*config.Conf
 
 	mc.Server.Host = mergeString(cfg.Server.Host, opt.host)
 	mc.Server.Port = mergeString(cfg.Server.Port, opt.port)
+	if opt.secure {
+		mc.Server.Secure = true
+	}
 
 	mc.Request.Header = mergeHeader(cfg.Request.Header, headers)
 

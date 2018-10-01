@@ -2,12 +2,14 @@ package gateway
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/credentials"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/ktr0731/evans/config"
@@ -24,8 +26,20 @@ type GRPCClient struct {
 }
 
 func NewGRPCClient(config *config.Config) (*GRPCClient, error) {
+	opts := []grpc.DialOption{}
+	if config.Server.Secure {
+		pool, err := x509.SystemCertPool()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load system certificate")
+		}
+		creds := credentials.NewClientTLSFromCert(pool, "")
+		opts = append(opts, grpc.WithTransportCredentials(creds))
+	} else {
+		opts = append(opts, grpc.WithInsecure())
+	}
+
 	// TODO: secure option
-	conn, err := grpc.Dial(fmt.Sprintf("%s:%s", config.Server.Host, config.Server.Port), grpc.WithInsecure())
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%s", config.Server.Host, config.Server.Port), opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to dial to gRPC server")
 	}
